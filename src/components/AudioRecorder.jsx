@@ -2,34 +2,36 @@ import React, { useState, useRef } from 'react';
 import { Mic, Square, Share2 } from 'lucide-react';
 import { shareToVoiceMemos } from '../utils/audioExporter';
 
-interface AudioRecorderProps {
-  label?: string; // 'Grabar idea' o 'Grabar Maqueta'
-}
-
-export const AudioRecorder: React.FC<AudioRecorderProps> = ({ label = 'Grabar idea' }) => {
+export const AudioRecorder = ({ label = 'Grabar idea' }) => {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorderRef.current = new MediaRecorder(stream);
-    chunksRef.current = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      chunksRef.current = [];
 
-    mediaRecorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
-    mediaRecorderRef.current.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
-      setAudioBlob(blob);
-    };
+      mediaRecorderRef.current.ondataavailable = (e) => chunksRef.current.push(e.data);
+      mediaRecorderRef.current.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        setAudioBlob(blob);
+      };
 
-    mediaRecorderRef.current.start();
-    setIsRecording(true);
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error al acceder al micrófono:", err);
+    }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
-    setIsRecording(false);
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   return (
